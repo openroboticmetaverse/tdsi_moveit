@@ -44,7 +44,7 @@ def generate_launch_description():
     servo_params = {"tdsi_moveit": servo_yaml}
 
     # RViz
-    rviz_config_file = (
+    """ rviz_config_file = (
         get_package_share_directory("tdsi_moveit") + "/config/demo_rviz_config.rviz"
     )
     rviz_node = Node(
@@ -57,7 +57,7 @@ def generate_launch_description():
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
         ],
-    )
+    ) """
 
     # ros2_control using FakeSystem as hardware
     ros2_controllers_path = os.path.join(
@@ -150,7 +150,7 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            rviz_node,
+            #rviz_node,
             ros2_control_node,
             joint_state_broadcaster_spawner,
             panda_arm_controller_spawner,
