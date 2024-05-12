@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/*      Title     : joystick_servo_example.cpp
+/*      Original Title     : joystick_servo_example.cpp
  *      Project   : moveit_servo
  *      Created   : 08/07/2020
  *      Author    : Adam Pettinger
@@ -156,7 +156,6 @@ void updateCmdFrame(std::string &frame_name, const std::vector<int> &buttons)
     else if (buttons[MENU] && frame_name == BASE_FRAME_ID)
         frame_name = EEF_FRAME_ID;
 }
-
 namespace tdsi_moveit
 {
     class JoyToServoPub : public rclcpp::Node
@@ -165,7 +164,6 @@ namespace tdsi_moveit
         JoyToServoPub(const rclcpp::NodeOptions &options)
             : Node("joy_to_twist_publisher", options), frame_to_publish_(BASE_FRAME_ID)
         {
-            // Setup pub/sub
             joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
                 JOY_TOPIC, rclcpp::SystemDefaultsQoS(),
                 [this](const sensor_msgs::msg::Joy::ConstSharedPtr &msg)
@@ -173,82 +171,26 @@ namespace tdsi_moveit
 
             twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(TWIST_TOPIC, rclcpp::SystemDefaultsQoS());
             joint_pub_ = this->create_publisher<control_msgs::msg::JointJog>(JOINT_TOPIC, rclcpp::SystemDefaultsQoS());
-            collision_pub_ =
-                this->create_publisher<moveit_msgs::msg::PlanningScene>("/planning_scene", rclcpp::SystemDefaultsQoS());
 
-            // Create a service client to start the ServoNode
+            // Removed thread and collision object creation
             servo_start_client_ = this->create_client<std_srvs::srv::Trigger>("/servo_node/start_servo");
             servo_start_client_->wait_for_service(std::chrono::seconds(1));
             servo_start_client_->async_send_request(std::make_shared<std_srvs::srv::Trigger::Request>());
-
-            // Load the collision scene asynchronously
-            collision_pub_thread_ = std::thread([this]()
-                                                {
-      rclcpp::sleep_for(std::chrono::seconds(3));
-      // Create collision object, in the way of servoing
-      moveit_msgs::msg::CollisionObject collision_object;
-      collision_object.header.frame_id = "panda_link0";
-      collision_object.id = "box";
-
-      shape_msgs::msg::SolidPrimitive table_1;
-      table_1.type = table_1.BOX;
-      table_1.dimensions = { 0.4, 0.6, 0.03 };
-
-      geometry_msgs::msg::Pose table_1_pose;
-      table_1_pose.position.x = 0.6;
-      table_1_pose.position.y = 0.0;
-      table_1_pose.position.z = 0.4;
-
-      shape_msgs::msg::SolidPrimitive table_2;
-      table_2.type = table_2.BOX;
-      table_2.dimensions = { 0.6, 0.4, 0.03 };
-
-      geometry_msgs::msg::Pose table_2_pose;
-      table_2_pose.position.x = 0.0;
-      table_2_pose.position.y = 0.5;
-      table_2_pose.position.z = 0.25;
-
-      collision_object.primitives.push_back(table_1);
-      collision_object.primitive_poses.push_back(table_1_pose);
-      collision_object.primitives.push_back(table_2);
-      collision_object.primitive_poses.push_back(table_2_pose);
-      collision_object.operation = collision_object.ADD;
-
-      moveit_msgs::msg::PlanningSceneWorld psw;
-      psw.collision_objects.push_back(collision_object);
-
-      auto ps = std::make_unique<moveit_msgs::msg::PlanningScene>();
-      ps->world = psw;
-      ps->is_diff = true;
-      collision_pub_->publish(std::move(ps)); });
-        }
-
-        ~JoyToServoPub() override
-        {
-            if (collision_pub_thread_.joinable())
-                collision_pub_thread_.join();
         }
 
         void joyCB(const sensor_msgs::msg::Joy::ConstSharedPtr &msg)
         {
-            // Create the messages we might publish
             auto twist_msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
             auto joint_msg = std::make_unique<control_msgs::msg::JointJog>();
-
-            // This call updates the frame for twist commands
             updateCmdFrame(frame_to_publish_, msg->buttons);
-
-            // Convert the joystick message to Twist or JointJog and publish
             if (convertJoyToCmd(msg->axes, msg->buttons, twist_msg, joint_msg))
             {
-                // publish the TwistStamped
                 twist_msg->header.frame_id = frame_to_publish_;
                 twist_msg->header.stamp = this->now();
                 twist_pub_->publish(std::move(twist_msg));
             }
             else
             {
-                // publish the JointJog
                 joint_msg->header.stamp = this->now();
                 joint_msg->header.frame_id = "panda_link3";
                 joint_pub_->publish(std::move(joint_msg));
@@ -259,15 +201,10 @@ namespace tdsi_moveit
         rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
         rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
         rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
-        rclcpp::Publisher<moveit_msgs::msg::PlanningScene>::SharedPtr collision_pub_;
         rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr servo_start_client_;
-
         std::string frame_to_publish_;
-
-        std::thread collision_pub_thread_;
-    }; // class JoyToServoPub
-
-} // namespace tdsi_moveit
+    };
+}
 
 // Register the component with class_loader
 #include <rclcpp_components/register_node_macro.hpp>
