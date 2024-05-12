@@ -157,7 +157,7 @@ void updateCmdFrame(std::string &frame_name, const std::vector<int> &buttons)
         frame_name = EEF_FRAME_ID;
 }
 
-namespace moveit_servo
+namespace tdsi_moveit
 {
     class JoyToServoPub : public rclcpp::Node
     {
@@ -271,4 +271,4 @@ namespace moveit_servo
 
 // Register the component with class_loader
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(tdsi_moveit::joy_servo_tdsi)
+RCLCPP_COMPONENTS_REGISTER_NODE(tdsi_moveit::JoyToServoPub)

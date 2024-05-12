@@ -21,8 +21,19 @@ add_library(joy_servo_tdsi SHARED
   src/joy_servo_tdsi.cpp
 )
 
+ament_target_dependencies(joy_servo_tdsi
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  geometry_msgs
+  control_msgs
+  std_srvs
+  moveit_msgs
+  moveit_servo
+)
+
 # Register the node as a component
-rclcpp_components_register_nodes(joy_servo_tdsi "tdsi_moveit::joy_servo_tdsi")
+rclcpp_components_register_nodes(joy_servo_tdsi "tdsi_moveit::JoyToServoPub")
 
 install(TARGETS
   joy_servo_tdsi
@@ -33,10 +44,9 @@ install(TARGETS
   INCLUDES DESTINATION include
 )
 
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
-)
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
